@@ -2,6 +2,10 @@ type Query {
   login(account: String!, password: String!): Token
 }
 
+type Mutation {
+  register(account: String!, password: String!): User
+}
+
 type User {
   id: Int
   account: String

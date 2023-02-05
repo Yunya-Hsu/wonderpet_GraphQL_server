@@ -3,6 +3,7 @@ require('dotenv').config();
 
 const argon2 = require('argon2');
 const jwt = require('jsonwebtoken');
+const fs = require('fs').promises;
 
 // interface
 interface UserData {
@@ -54,5 +55,34 @@ export const resolvers = {
     },
 
 
+  },
+
+  Mutation: {
+    register: async(_parent: any, args: { account: string, password: string }) => {
+      const { account, password }: { account: string, password: string } = args;
+
+      // check if account(email) exist
+      const theUser = users.find(user => user.account === account);
+      if (theUser) throw new Error('Email Account Already Exists');
+
+      // hash password (to store in DB)
+      const hashPassword = await argon2.hash(password);
+
+      // create user
+      const newUser: UserData = {
+        id: users.length + 1,
+        account: account,
+        password: hashPassword,
+        name: null,
+        birthday: null
+      };
+      users.push(newUser);
+
+      // store user data into DB (json)
+      await fs.writeFile('../../user-data.json', JSON.stringify(users));
+
+      // return user data
+      return newUser;
+    },
   }
 };
