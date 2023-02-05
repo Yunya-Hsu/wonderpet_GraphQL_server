@@ -1,6 +1,5 @@
 // utils
 require('dotenv').config();
-
 const argon2 = require('argon2');
 const jwt = require('jsonwebtoken');
 const fs = require('fs').promises;
@@ -20,7 +19,7 @@ interface TokenUserData {
   birthday: string | null;
 };
 
-// moke data
+// moke data (database)
 const users: UserData[] = require('../../user-data.json');
 
 
@@ -54,7 +53,10 @@ export const resolvers = {
       return { token };
     },
 
-
+    me: async(_parent: any, _args: any, context: TokenUserData) => {
+      if (!context) throw new Error ('Please log in first');
+      return context;
+    }
   },
 
   Mutation: {
