@@ -1,4 +1,14 @@
 type Query {
-  test: String
+  login(account: String!, password: String!): Token
 }
 
+type User {
+  id: Int
+  account: String
+  name: String
+  birthday: String
+}
+
+type Token {
+  token: String!
+}

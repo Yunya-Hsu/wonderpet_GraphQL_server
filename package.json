@@ -22,7 +22,10 @@
   "homepage": "https://github.com/Yunya-Hsu/wonderpet_GraphQL_server#readme",
   "dependencies": {
     "@apollo/server": "^4.3.2",
+    "argon2": "^0.30.3",
+    "dotenv": "^16.0.3",
     "graphql": "^16.6.0",
+    "jsonwebtoken": "^9.0.0",
     "ts-node": "^10.9.1"
   }
 }

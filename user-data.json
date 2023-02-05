@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "account": "april@test.com",
+    "password": "$argon2id$v=19$m=65536,t=3,p=4$N4FkXLj7tNMWamnfT5ATZQ$70nGMUlR79usFbzsd5fiFjhZTU39OdVWPO7vAl/kkQc",
+    "name": "April",
+    "birthday": "1988-04-23"
+  },
+  {
+    "id": 2,
+    "account": "billy@test.com",
+    "password": "$argon2id$v=19$m=65536,t=3,p=4$N4FkXLj7tNMWamnfT5ATZQ$70nGMUlR79usFbzsd5fiFjhZTU39OdVWPO7vAl/kkQc",
+    "name": "Billy",
+    "birthday": "1990-10-09"
+  },
+  {
+    "id": 3,
+    "account": "cathy@test.com",
+    "password": "$argon2id$v=19$m=65536,t=3,p=4$N4FkXLj7tNMWamnfT5ATZQ$70nGMUlR79usFbzsd5fiFjhZTU39OdVWPO7vAl/kkQc",
+    "name": "Cathy",
+    "birthday": "1985-07-12"
+  }
+]
