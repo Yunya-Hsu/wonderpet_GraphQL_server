@@ -78,3 +78,24 @@ form of choices.
                     }
                 ]
             }
+
+
+### Edit a Question [PATCH]
+
++ Request (application/json)
+
+        {
+            "question": "Favourite food?",
+        }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Location: /questions/2
+
+    + Body
+
+            {
+                "question": "Favourite food?",
+            }
