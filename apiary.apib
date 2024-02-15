@@ -8,7 +8,7 @@ HOST: http://localhost:7080/api/
 
 Retrieve AudioLevels.
  
-### Get audiolevels of camera [GET /audiolevels/:id{?start,end}]
+### Get audiolevels of camera [GET /audiolevels/{id}{?start,end}]
 
 + Parameters
     + id: 564b882cca5fcb5c0670f5b9 (required, string) - ID of the Camera.
@@ -301,9 +301,13 @@ Retrieve, update and add new cameras.
 ### Transfer a Camera Management [POST /cameras/{id}/transfer-mgmt]
 *Stackable Only\**
 
++ Parameters
+    + id: 564b882cca5fcb5c0670f5b9 (required, string) - ID of the Camera.
+
 + Request (application/json)
-    + nvrMac: `FCECDA1F2627`  - The mac of the transfer target NVR.
-    + preserveRecording: `false` (optional, boolean) - Preserve camera recordings/data on the original NVR or not. (default: false)
+    + Attributes
+        + nvrMac: `FCECDA1F2627`  - The mac of the transfer target NVR.
+        + preserveRecording: `false` (optional, boolean) - Preserve camera recordings/data on the original NVR or not. (default: false)
 
 + Response 200 (application/json)
    + Attributes (camera)
@@ -484,12 +488,13 @@ PTZ Only\**
 *PTZ Only\**
 
 + Response 200 (application/json)
-    + Attributes(array['object'])
-        + id (string)
-        + slot (number) - preset id, 0..9
-        + ptz (ptz) - preset position
-        + snapshot (string) - snapshot url
-        + name (string) - preset name
+    + Attributes(array[object])
+       + (object)
+          + id (string)
+          + slot (number) - preset id, 0..9
+          + ptz (array[ptz]) - preset position
+          + snapshot (string) - snapshot url
+          + name (string) - preset name
  
 ### Delete PTZ preset [DELETE /cameras/{id}/ptz/preset/{slot}]
 *PTZ Only\**
@@ -575,7 +580,7 @@ PTZ Only\**
     + Attributes
         + success (boolean) - result of setting wifi
  
-### Get Playback History [GET /cameras/{id}/playback-history{?start,end,lens}]
+### Get Playback History [GET /cameras/{id}/playback-history{?start,end,resolution,lens}]
 
 + Parameters
     + start: `1464299823082` (required, number) - The start timestamp of playback history
@@ -722,8 +727,11 @@ PTZ Only\**
 
 + Parameters
     + id: 564b882cca5fcb5c0670f5b9 (required, string) - ID of the chime.
-    + essid (required, string) - essid of target Wifi network
-    + psk (required, string) - password, plain text
+
++ Request (application/json)
+    + Attributes
+        + essid (required, string) - essid of target Wifi network
+        + psk (required, string) - password, plain text
 
 + Response 200 (application/json)
     + Attributes
@@ -763,10 +771,11 @@ PTZ Only\**
 ### Get migration progress [GET /detection-search/progress]
 
 + Response 200 (application/json)
-   + Attributes (Objects)
+   + Attributes
+      + Progress(number)
 
  
-### Get search result [GET /detection-search?{?labels,fuzzys}]
+### Get search result [GET /detection-search?{?start,end,labels,fuzzys,limit,offset,orderDirection}]
 
 + Parameters
     + start: `1464299823082` (required, number) - Filter out events < start (unix timestamp)
@@ -778,7 +787,9 @@ PTZ Only\**
     + orderDirection: `ASC|DESC` (optional, string) - order direction of events
 
 + Response 200 (application/json)
-   + Attributes (Objects)
+    + Attributes
+       +  events(array)
+       +  execTime(number)
 
  
 
@@ -791,7 +802,13 @@ Retrieve new devices.
 ### List All Devices Keyed by deviceType [GET]
 
 + Response 200 (application/json)
-    + devices (object) - A object of all devices
+    + Attributes
+        + bridges (object)
+        + cameras (object)
+        + lights (object)
+        + sensors (object)
+        + viewers (object)
+        + chimes (object)
  
 ### Adopt Devices [POST /devices/adopt]
 
@@ -909,10 +926,8 @@ Retrieve new devices.
 ### Update the device items in Device-Group [PATCH /device-groups/:id/items]
 
 + Request (application/json)
-    + Attributes
-        + *{item.id}* (boolean) - item.id you want to add or remove in the device-group
-            + true - add into the device-group
-            + false - remove from the device-group
+    + Attributes(object)
+        + id: true (required, boolean) - item.id you want to add or remove in the device-group; true means add into the device-group, false means remove from the device-group
 
 + Response 200 (application/json)
     + Attributes (deviceGroup)
@@ -938,7 +953,13 @@ Retrieve new devices.
 ### update firmware of all updatable devices [POST /devices/updateAll]
 
 + Response 200 (application/json)
-    + devices (object) - A object of updatable devices
+    + Attributes
+        + bridges (object)
+        + cameras (object)
+        + lights (object)
+        + sensors (object)
+        + viewers (object)
+        + chimes (object)
  
 
 ## Group Doorlocks
@@ -1028,9 +1049,10 @@ Manual calibration steps:
     + id: 564b882cca5fcb5c0670f5b9 (required, string) - ID of the Doorlock.
 + Attributes
     + auto: true (required, boolean) - Determines is calibration automatic or manual
-    + lockStatus: OPEN (optional, string) - In case of manual calibration lockStatus sets when doorlock is in expected position
-      - OPEN
-      - CLOSED
+    + lockStatus: OPEN (optional, enum[string]) - In case of manual calibration lockStatus sets when doorlock is in expected position
+        + Members
+            + OPEN
+            + CLOSED
 
 + Response 200 (application/json)
     + Attributes (doorlock)
@@ -1047,7 +1069,7 @@ Manual calibration steps:
 ## Group Events
 
  
-## Events Collection [/events{?start,end,camera,type}]
+## Events Collection [/events{?start,end,camera,cameras,devices,users,allCameras,type,types,smartDetectTypes,categories,limit,offset,orderDirection,addTimelapseDescriptions,withoutDescriptions,showDeleted}]
  
 ### List All Events [GET]
 
@@ -1104,14 +1126,20 @@ Manual calibration steps:
 
 + Response 200 (image/gif)
  
-### Get Event Thumbnail [/events/{id}/thumbnail{?isFullfov}]
+### Get Event Thumbnail [GET /events/{id}/thumbnail{?w,h,isFullfov}]
 
 + Parameters
-    + isFullfov: `false` (default, false) - Filter fullfov or cropped thumbnail
+    + id: 564b882cca5fcb5c0670f5b9 (required, string) - ID of the event
+    + w: `480` (optional, number) - Width
+    + h: `180` (optional, number) - Height
+    + isFullfov: `false` (optional, false) - Filter fullfov or cropped thumbnail
 
 + Response 200 (image/jpeg)
  
-### Get Smart Detection Track Information [/events/{id}/smartDetectTrack]
+### Get Smart Detection Track Information [GET /events/{id}/smartDetectTrack]
+
++ Parameters
+    + id: 564b882cca5fcb5c0670f5b9 (required, string) - ID of the event
 
 + Response 200 (application/json)
     + Attributes (smartDetectTrack)
@@ -1302,9 +1330,7 @@ Retrieve, update and add new live views.
 
 DEPRECATED! Please use /events API instead.
  
-## Motion Events Collection [/motion-events{?start,end,camera}]
- 
-### List All Motion Events [GET]
+### List All Motion Events [GET /motion-events{?end,start,camera,cameras}]
 
 + Parameters
     + start: `1464299823082` (required, number) - Filter out events < start (unix timestamp)
@@ -1448,7 +1474,7 @@ Retrieve, update and perform actions on NVR.
         + nameIsNullCount (number) - count of face groups without name
         + notificationEnabledCount (number) - count of face groups with notification
  
-### Get counts of face groups [GET /recognition/face/groups/counts{?start,end}]
+### Get counts of face groups [GET /recognition/face/groups/counts{?ids,hasName,isInterested,names,tags,orderBy,orderDirection,start,end,pageSize,page}]
 
 + Parameters
     + ids: `[63187c760009a00387000951]` (optional, array) - Filter face groups by ids
@@ -1467,23 +1493,24 @@ Retrieve, update and perform actions on NVR.
 
 + Response 200 (application/json)
     + Attributes (object)
-        + groups (array):
-            + id: `6531f65b03baf201f6000424` (string)
-            + name: `andy` (optional, string)
-            + type: `face` (string)
-            + imagePath: `/recognition/face/groups/6531f65b03baf201f6000424/image?t=1706595287657` (string)
-            + detectionsCount: `3` (number)
-            + firstDetectedAt: `1697773136286` (optional, number)
-            + lastDetectedAt: `1697773136286` (optional, number)
-            + createdAt: `1697773147954` (number)
-            + isNotificationEnabled: `false` (boolean)
-            + tags: `["boss"]` (array)
-            + description: `UI` (optional, string)
-        + links (number) - counts of face groups
+        + groups (array[object])
+           + (object)
+              + id: `6531f65b03baf201f6000424` (string)
+              + name: `andy` (optional, string)
+              + type: `face` (string)
+              + imagePath: `/recognition/face/groups/6531f65b03baf201f6000424/image?t=1706595287657` (string)
+              + detectionsCount: 3 (number)
+              + firstDetectedAt: 1697773136286 (optional, number)
+              + lastDetectedAt: 1697773136286 (optional, number)
+              + createdAt: 1697773147954 (number)
+              + isNotificationEnabled: false (boolean)
+              + tags: `["boss"]` (array)
+              + description: `UI` (optional, string)
+        + links (object) - counts of face groups
             + prev: `/recognition/face/groups?pageSize=1&page=2&orderBy=lastDetectedAt&orderDirection=asc` (optional, string) - link to previous page
             + next: `/recognition/face/groups?pageSize=1&page=2&orderBy=lastDetectedAt&orderDirection=asc` (optional, string) - link to next page
  
-### Get detections of face groups [GET /recognition/face/groups/{groupId}/detections]
+### Get detections of face groups [GET /recognition/face/groups/{groupId}/detections{?cameras,start,end,pageSize,page}]
 
 + Parameters
     + cameras: `[63187c760009a00387000951]` (optional, array) - Filter face groups by cameras
@@ -1496,14 +1523,15 @@ Retrieve, update and perform actions on NVR.
 
 + Response 200 (application/json)
     + Attributes (object)
-        + detections (array):
-            + id: `6531f65b03baf201f6000424` (string)
-            + eventId: `6531f65b03baf201f6000424` (string)
-            + thumbnailId: `6531f65b03baf201f6000424` (string)
-            + cameraId: `6531f65b03baf201f6000424` (string)
-            + groupId: `6531f65b03baf201f6000424` (string)
-            + detectedAt: `1697773136286` (number)
-        + links (number) - counts of face groups
+        + detections (array[object])
+           + (object)
+              + id: `6531f65b03baf201f6000424` (string)
+              + eventId: `6531f65b03baf201f6000424` (string)
+              + thumbnailId: `6531f65b03baf201f6000424` (string)
+              + cameraId: `6531f65b03baf201f6000424` (string)
+              + groupId: `6531f65b03baf201f6000424` (string)
+              + detectedAt: 1697773136286 (number)
+        + links (object) - counts of face groups
             + prev: `/recognition/face/groups/{groupId}/detections?pageSize=1&page=2` (optional, string) - link to previous page
             + next: `/recognition/face/groups/{groupId}/detections?pageSize=1&page=2` (optional, string) - link to next page
  
@@ -1725,12 +1753,9 @@ Retrieve Statistics.
     + period: `300000` (required, string) - period time of each column
 
 + Response 200 (application/json)
-    + Attributes
-        + cameraId:
-            + audioLevels: `[{
-                ts: 1651204001534,
-                value: 26
-              }]`
+    + Attributes(object)
+        + cameraId(object):
+            + audioLevels: `[0, 0, 20, 0]`
  
 ### Get statistics of cameras [GET /statistics/detections{?groupId,start,end,period}]
 + Parameters
@@ -1739,8 +1764,8 @@ Retrieve Statistics.
     + period: `300000` (required, string) - period time of each column
 
 + Response 200 (application/json)
-    + Attributes
-        + cameraId:
+    + Attributes(object)
+        + cameraId(object):
             + detectionLength: `[1234, 0, 3000]`
             + motions: `[2, 0, 3]`
             + rings: `[2, 0, 3]`
@@ -1755,7 +1780,7 @@ Retrieve Statistics.
     + hours: `24` (required, number) - create stats of last n hours
 
 + Response 200 (application/json)
-    + Attributes
+    + Attributes(object) - Any attribute type will be omitted, if count = 0 (whole "smart" or "line" will be missing, if there are no events)
         + ring: 1
         + motion: 2
         + sensorMotion: 2
@@ -1777,9 +1802,6 @@ Retrieve Statistics.
         + line
             + person: 6
             + vehicle: 6
-
-Any attribute type will be omitted, if count = 0
-(whole "smart" or "line" will be missing, if there are no events)
  
 
 ## Retrieve livestream tcp bridge params [/tcp/livestream{?requestId,camera,channel,type,progressive,allowPartialGOP,fragmentDurationMillis,rebaseTimestampsToZero}]
@@ -1809,7 +1831,7 @@ Retrieve, update and add new live views.
 
 Get the status of video partitions and events
 
-### Get the status of timelapse data [GET /video/timelapse/status{?start,end,cameras}]
+### Get the status of timelapse data [GET /video/timelapse/status{?cameras,types,start,end}]
 
 + Parameters
     + cameras (optional, array) - List of camera IDs to get the status for or 'all' to get the status for all accessible cameras.
@@ -1949,7 +1971,7 @@ Returns an alias you can use to open a livestream data channel
 ## Export [/video/export]
 Export video to MP4
 
-### Export Video [GET /video/export{?camera,start,end,channel,filename,mute,type,fps}]
+### Export Video [GET /video/export{?camera,start,end,channel,lens,filename,mute,type,fps}]
 
 + Parameters
     + camera: 564b882cca5fcb5c0670f5b9 (required, string) - Camera ID.
@@ -1976,7 +1998,7 @@ Export video to MP4
 ## Estimate Video Export [/video/export/estimate]
 Estimate Video Export to MP4
 
-### Estimate Video Export [GET /video/export/estimate{?camera,start,end,channel,type}]
+### Estimate Video Export [GET /video/export/estimate{?camera,start,end,channel,lens,type}]
 
 + Parameters
     + camera: 564b882cca5fcb5c0670f5b9 (required, string) - Camera ID.
@@ -2014,7 +2036,7 @@ Delete a range of video
 
 Opens a new playback data channel and returns the name of the channel.
 
-### Open a playback channel [GET /video/playback{?camera,channel,start,end,mute,idrFrequency,motionEvent,label,format}]
+### Open a playback channel [GET /video/playback{?camera,channel,lens,motionEvent,start,end,label,format,idrFrequency,mute}]
 
 + Parameters
     + camera: `564b882cca5fcb5c0670f5b9` (required, string) - Camera ID.
@@ -2048,7 +2070,7 @@ Opens a new playback data channel and returns the name of the channel.
 
 Opens a new timelapse data channel and returns the name of the channel.
 
-### Open a timelapse channel [GET /video/timelapse{?start,end,camera,label,channel,format,reverse,withIdrs}]
+### Open a timelapse channel [GET /video/timelapse{?camera,start,end,label,channel,lens,format,reverse,withIdrs}]
 
 + Parameters
     + camera: `564b882cca5fcb5c0670f5b9` (required, string) - Camera ID.
@@ -2180,9 +2202,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 ## Group WS
 
  
-## Retrieve livestream websocket url [/ws/livestream{?requestId,camera,channel,type,progressive,allowPartialGOP,fragmentDurationMillis,rebaseTimestampsToZero}]
- 
-### Receive websocket where stream will be provided [GET]
+### Retrieve livestream websocket url [GET /ws/livestream{?camera,lens,channel,type,progressive,allowPartialGOP,fragmentDurationMillis,rebaseTimestampsToZero,requestId}]
 
 + Parameters
     + camera: `C123` (required, string) - Filter events by camera
@@ -2200,9 +2220,7 @@ Opens a new timelapse data channel and returns the name of the channel.
         + url (string) - websocket url where to receive stream for this request
 
  
-## Retrieve playback websocket url [/ws/playback{?camera,channel,format,start}]
- 
-### Receive websocket where stream will be provided [GET]
+### Receive websocket where stream will be provided [GET /ws/playback{?camera,lens,start,channel,format}]
 
 + Parameters
     + camera: `C123` (required, string) - Filter events by camera
@@ -2216,9 +2234,7 @@ Opens a new timelapse data channel and returns the name of the channel.
         + url (string) - websocket url where to receive stream for this request
 
  
-## Retrieve talkback websocket url [/ws/talkback{?camera}]
- 
-### Receive websocket where stream will be provided [GET]
+### Receive websocket where stream will be provided [GET /ws/talkback{?camera}]
 
 + Parameters
     + camera: `C123` (required, string) - Filter events by camera
@@ -2228,9 +2244,7 @@ Opens a new timelapse data channel and returns the name of the channel.
         + url (string) - websocket url where to receive stream for this request
 
  
-## Retrieve timelapse websocket url [/ws/timelapse{?camera,channel,format,start,end,live}]
- 
-### Receive websocket where stream will be provided [GET]
+### Receive websocket where stream will be provided [GET /ws/timelapse{?camera,lens,channel,format,start,end,live}]
 
 + Parameters
     + camera: `C123` (required, string) - Filter events by camera
@@ -2246,9 +2260,7 @@ Opens a new timelapse data channel and returns the name of the channel.
         + url (string) - websocket url where to receive stream for this request
 
  
-## Retrieve heatmap websocket url [/ws/heatmap{?camera,frameDurationMs}]
- 
-### Receive websocket where stream will be provided [GET]
+### Receive websocket where stream will be provided [GET /ws/heatmap{?camera,frameDurationMs}]
 
 + Parameters
     + camera: `C123` (required, string) - Filter events by camera
@@ -2259,13 +2271,11 @@ Opens a new timelapse data channel and returns the name of the channel.
         + url (string) - websocket url where to receive stream for this request
 
  
-## Retrieve speedtest websocket url [/ws/speedtest]
+### Receive websocket where speedtest stream will be provided [GET /ws/speedtest]
+
++ Response 200 (application/json)
  
-### Receive websocket where speedtest stream will be provided [GET]
- 
-## Retrieve sharedStream websocket url [/ws/sharedStream{?camera}]
- 
-### Receive websocket where stream will be provided [GET]
+### Receive websocket where stream will be provided [GET /ws/sharedStream{?camera}]
 
 + Parameters
     + camera: `C123` (required, string) - camera id
@@ -2275,9 +2285,7 @@ Opens a new timelapse data channel and returns the name of the channel.
         + url (string) - websocket url where to receive stream for this request
 
  
-## Retrieve liveDetectTrack websocket url [/ws/liveDetectTrack{?camera}]
- 
-### Receive websocket where stream will be provided [GET]
+### Receive websocket where stream will be provided [GET /ws/liveDetectTrack{?camera}]
 
 + Parameters
     + camera: `C123` (required, string) - camera id
@@ -2326,15 +2334,15 @@ Opens a new timelapse data channel and returns the name of the channel.
 + connectionHost: `null` (string, default) - The ip or hostname the device uses to connect.
 + type: `null` (string, default) - The device model name.
 + name: `null` (string, default) - The name of the device.
-+ upSince (number) - Unix timestamp of when the device started up.
-+ uptime (number) - device uptime in second.
-+ lastSeen (number) - Unix timestamp of when the device was last connected.
-+ connectedSince (number) - Unix timestamp of when the device connected to the NVR.
++ upSince: `1445408038748` (number) - Unix timestamp of when the device started up.
++ uptime: `1234567890` (number) - device uptime in second.
++ lastSeen: `1445408038748` (number) - Unix timestamp of when the device was last connected.
++ connectedSince: `1445408038748` (number) - Unix timestamp of when the device connected to the NVR.
 + state: `DISCONNECTED` (enum[string], default) - Connection state of the device.
   + `CONNECTED`
   + `CONNECTING`
   + `DISCONNECTED`
-+ lastDisconnect (number) - Unix timestamp of the last time the device disconnected.
++ lastDisconnect: `1445408038748` (number) - Unix timestamp of the last time the device disconnected.
 + hardwareRevision: `null` (string, default) - Hardware revision of the device
 + firmwareVersion: `null` (string, default) - The version of firmware that is installed on the device.
 + latestFirmwareVersion: `null` (string, default) - The latest firmware version of the device.
@@ -2371,13 +2379,13 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 + id: `null` (string, default) - Bridge candidate ID.
 + signalQuality (number) - Percent representation of Bluetooth signal strength from the Bluetooth device to the bridge candidate.
-+ lastSeen (number) - Unix timestamp of when the Bluetooth device was last discovered by the bridge.
++ lastSeen: `1445408038748` (number) - Unix timestamp of when the Bluetooth device was last discovered by the bridge.
 
 ## `bridgeCandidates` (array[`bridgeCandidate`])
 
 ## audioSettings (object)
 
-+ style: `nature` (array, default) - What audio style camera is using
++ style: `["nature"]` (array, default) - What audio style camera is using
 
 ## `audioSettingss` (array[`audioSettings`])
 
@@ -2390,15 +2398,15 @@ Opens a new timelapse data channel and returns the name of the channel.
 + connectionHost: `null` (string, default) - The ip or hostname the device uses to connect.
 + type: `null` (string, default) - The device model name.
 + name: `null` (string, default) - The name of the device.
-+ upSince (number) - Unix timestamp of when the device started up.
-+ uptime (number) - device uptime in second.
-+ lastSeen (number) - Unix timestamp of when the device was last connected.
-+ connectedSince (number) - Unix timestamp of when the device connected to the NVR.
++ upSince: `1445408038748` (number) - Unix timestamp of when the device started up.
++ uptime: `1234567890` (number) - device uptime in second.
++ lastSeen: `1445408038748` (number) - Unix timestamp of when the device was last connected.
++ connectedSince: `1445408038748` (number) - Unix timestamp of when the device connected to the NVR.
 + state: `DISCONNECTED` (enum[string], default) - Connection state of the device.
   + `CONNECTED`
   + `CONNECTING`
   + `DISCONNECTED`
-+ lastDisconnect (number) - Unix timestamp of the last time the device disconnected.
++ lastDisconnect: `1445408038748` (number) - Unix timestamp of the last time the device disconnected.
 + hardwareRevision: `null` (string, default) - Hardware revision of the device
 + firmwareVersion: `null` (string, default) - The version of firmware that is installed on the device.
 + latestFirmwareVersion: `null` (string, default) - The latest firmware version of the device.
@@ -2428,7 +2436,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + nvrMac: `24A43C3DFEB9` (string) - The MAC address of the NVR managed this device.
 + guid: `null` (string, default) - Unique id of the device
 + anonymousDeviceId: `null` (string, default) - Persistent unique device identifier.
-+ lastMotion (number) - Unix timestamp of the last recorded motion.
++ lastMotion: `1445408038748` (number) - Unix timestamp of the last recorded motion.
 + micVolume: `80` (number, default) - Mic volume: a number from 0-100.
 + isMicEnabled: `true` (boolean, default) - Whether or not the microphone on camera is enabled
 + channels (array[channel]) - A list of channels.
@@ -2450,7 +2458,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + isWirelessUplinkEnabled: `true` (boolean, default) - is wireless uplink enabled?
 + isMotionDetected: `false` (boolean, default) - Whether the camera is currently detecting motion
 + isSmartDetected: `false` (boolean, default) - Whether the camera is currently detecting smart motion
-+ phyRate (number) - Physical link rate of the camera in Mbps.
++ phyRate: `1000` (number) - Physical link rate of the camera in Mbps.
 + hdrMode: `false` (boolean, default) - Whether High Dynamic Range is on or off
 + videoMode: `default` (enum[string], default) - Current video mode of the camera
   + `default`
@@ -2461,17 +2469,17 @@ Opens a new timelapse data channel and returns the name of the channel.
 + featureFlags (featureFlags) - Feature flags of the camera
 + isProbingForWifi: `false` (boolean, default) - Whether the camera is probing for a network over wireless uplink
 + apMac: `80:2a:a8:13:0b:56` (string) - The MAC address of the AP that discovered this camera over wireless uplink
-+ apRssi (number) - The received signal strength indication of the AP that discovered this camera over wireless uplink
++ apRssi: `60` (number) - The received signal strength indication of the AP that discovered this camera over wireless uplink
 + apMgmtIp: `null` (string, default) - The management IP address of the AP that discovered this camera over wireless uplink
 + elementInfo: `SEVMTE8=` (string) - The element information provided by this camera while it was probing for a wireless network
 + chimeDuration: `0` (number, default) - How long your doorbell rings in milliseconds when someone presses the button. (0-10000 ms)
 + isDark: `false` (boolean, default) - Whether the camera is currently in dark scene.
 + lastPrivacyZonePositionId (number) - The last location of the privacy zone ID where the camera was. (PTZ only)
 + lcdMessage (lcdMessage) - LCD message information.
-+ lastRing (number) - Unix timestamp of the last time the doorbell ring button was pressed.
++ lastRing: `1445408038748` (number) - Unix timestamp of the last time the doorbell ring button was pressed.
 + wifiConnectionState (wifiConnectionState) - Wi-Fi connection state of the device.
 + isLiveHeatmapEnabled: `false` (boolean, default) - Whether the camera is currently live-heatmap enabled or not.
-+ eventStats: `[object Object]` (object, default) - Event statistics for the camera.
++ eventStats (object) - Event statistics for the camera.
 + videoReconfigurationInProgress: `false` (boolean, default) - Whether video settings, which need EMS stream to reset, are are being updated.
 + lenses (array[lens]) - An array of lenses.
 + voltage (number) - AC voltage.
@@ -2480,7 +2488,6 @@ Opens a new timelapse data channel and returns the name of the channel.
 + useGlobal: `true` (boolean, default) - Whether use global camera settings
 + audioBitrate (number) - The camera audio bitrate.
 + platform (string) - The camera platform.
-+ isPtz (undefined)
 + hasSpeaker (boolean) - Whether the camera has a speaker.
 + hasWifi (boolean) - Whether the camera has the wifi.
 + isPoorNetwork: `false` (boolean, default) - Whether the camera is currently in poor network state.
@@ -2493,7 +2500,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + is4K (boolean) - Whether the camera HQ is 4K resolution.
 + is2K (boolean) - Whether the camera HQ is 2K resolution.
 + isWaterproofCaseAttached: `false` (boolean, default) - Whether the waterproof case is attached.
-+ uplinkDevice: `null` (object, default) - Device data camera is connected to.
++ uplinkDevice (object) - Device data camera is connected to.
 + userConfiguredAp: `false` (boolean, default) - Whether the connected AP is user configured
 + hasRecordings: `false` (boolean, default)
 
@@ -2515,15 +2522,15 @@ Opens a new timelapse data channel and returns the name of the channel.
 + enabled: `true` (boolean, default) - Whether or not the channel is enabled.
 + isRtspEnabled: `false` (boolean, default) - Whether or not RTSP relaying is enabled for this channel.
 + rtspAlias: `null` (string, default) - The RTSP alias for this channel.
-+ width (number) - The width of the video stream for this channel.
-+ height (number) - The height of the video stream for this channel.
-+ fps (number) - The FPS to use for this channel.
-+ bitrate (number) - The maximum bits per second this channel should use.
-+ minBitrate (number) - The minimum allowed bits per second.
-+ maxBitrate (number) - The maximum allowed bits per second.
++ width: `1920` (number) - The width of the video stream for this channel.
++ height: `1080` (number) - The height of the video stream for this channel.
++ fps: `30` (number) - The FPS to use for this channel.
++ bitrate: `1000` (number) - The maximum bits per second this channel should use.
++ minBitrate: `32` (number) - The minimum allowed bits per second.
++ maxBitrate: `3000` (number) - The maximum allowed bits per second.
 + minClientAdaptiveBitRate (number) - The minimum allowed bps for this channel (used for adaptive bitrate).
 + minMotionAdaptiveBitRate (number) - The minimum allowed bps for this channel (used for adaptive bitrate).
-+ fpsValues: `1,5,10,15,20,25,30` (array) - The allowed FPS values for this channel.
++ fpsValues: `[1,5,10,15,20,25,30]` (array) - The allowed FPS values for this channel.
 + idrInterval: `5` (number, default) - Number of seconds between IDRs.
 + autoFps: `true` (boolean, default) - Whether or not the auto FPS is enabled.
 + autoBitrate: `true` (boolean, default) - Whether or not the auto bitrate is enabled.
@@ -2532,10 +2539,10 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 ## extenders (object)
 
-+ isAttached: `null` (boolean, default) - Whether extender attached
-+ hasFlash: `null` (boolean, default) - Whether flash supported
-+ hasIR: `null` (boolean, default) - Whether ir supported
-+ hasRadar: `null` (boolean, default) - Whether radar supported
++ isAttached (boolean) - Whether extender attached
++ hasFlash (boolean) - Whether flash supported
++ hasIR (boolean) - Whether ir supported
++ hasRadar (boolean) - Whether radar supported
 
 ## `extenderss` (array[`extenders`])
 
@@ -2565,12 +2572,12 @@ Opens a new timelapse data channel and returns the name of the channel.
 + hasWifi: `false` (boolean, default) - Whether the camera has wifi
 + hasHdr: `false` (boolean, default) - Whether the camera supports High Dynamic Range mode
 + hasAutoICROnly: `false` (boolean, default) - Whether the camera supports Auto-ICR-Filter-Only mode
-+ videoModes: `` (array, default) - A list of supported video modes by the camera
-+ videoModeMaxFps: `` (array, default) - A list of maximal FPS for each supported video mode
++ videoModes: `[]` (array, default) - A list of supported video modes by the camera
++ videoModeMaxFps: `[]` (array, default) - A list of maximal FPS for each supported video mode
 + hasLcdScreen: `false` (boolean, default) - Whether the camera has a LCD screen
-+ mountPositions: `` (array, default) - What mount positions do the camera support.
-+ smartDetectTypes: `` (array, default) - What smart detection object types do the camera support.
-+ smartDetectAudioTypes: `` (array, default) - What smart detection audio types do the camera support.
++ mountPositions: `[]` (array, default) - What mount positions do the camera support.
++ smartDetectTypes: `[]` (array, default) - What smart detection object types do the camera support.
++ smartDetectAudioTypes: `[]` (array, default) - What smart detection audio types do the camera support.
 + hasSmartDetect (boolean) - Whether the camera supports smart detect.
 + lensType: `null` (enum[string], default) - Type of the attached lens
   + `none`
@@ -2587,7 +2594,7 @@ Opens a new timelapse data channel and returns the name of the channel.
   + `LensProWide`
   + `LensProTele`
   + `LensPro360`
-+ motionAlgorithms: `` (array, default) - What motion algorithms do the camera support.
++ motionAlgorithms: `[]` (array, default) - What motion algorithms do the camera support.
 + privacyMaskCapability (privacyMaskCapability) - The capability of privacy masks.
 + focus (focusCapability) - Focus capability of the camera.
 + pan (panCapability) - Pan capability of the camera.
@@ -2596,8 +2603,8 @@ Opens a new timelapse data channel and returns the name of the channel.
 + hasSquareEventThumbnail: `false` (boolean, default) - Whether thumbnails are square.
 + hasPackageCamera: `false` (boolean, default) - Device has a secondary package camera.
 + hotplug (hotplugItem) - Hotplugable items
-+ audio: `` (array, default) - What audio features do the camera support.
-+ audioCodecs: `` (array, default) - What audio codecs do the camera support.
++ audio: `[]` (array, default) - What audio features do the camera support.
++ audioCodecs: `[]` (array, default) - What audio codecs do the camera support.
 + audioStyle (array) - What audio styles does the camera support.
 + isDoorbell: `false` (boolean, default) - Whether camera is a doorbell model
 + isPtz: `false` (boolean, default) - Whether camera is a ptz model
@@ -2620,8 +2627,8 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 ## hotplugItem (object)
 
-+ audio: `null` (boolean, default) - Whether audio attached, null if not supported
-+ video: `null` (boolean, default) - Whether video attached, null if not supported
++ audio (boolean) - Whether audio attached, null if not supported
++ video (boolean) - Whether video attached, null if not supported
 + extender (extenders) - extenders items
 + standaloneAdoption: `false` (boolean, default) - Whether camera is supported for adoption without video attached
 
@@ -2724,7 +2731,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + id (number) - ID of the zone. (start from 1)
 + name: `null` (string, default) - Name of the zone.
 + color: `null` (string, default) - Color of the zone.
-+ points: `0.25,0.25,0.75,0.25,0.75,0.75,0.25,0.75` (array) - An array of arrays of [x, y]
++ points: `[[0.25,0.25],[0.75,0.25],[0.75,0.75],[0.25,0.75]]` (array) - An array of arrays of [x, y]
 + sensitivity (number) - Motion sensitivity (0-100).
 + isTriggerLightEnabled: `true` (boolean, default) - Whether the G5 IR extender is enabled.
 
@@ -2751,7 +2758,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + id (number) - ID of the zone. (start from 1)
 + name: `null` (string, default) - Name of the zone.
 + color: `null` (string, default) - Color of the zone.
-+ points: `0.25,0.25,0.75,0.25,0.75,0.75,0.25,0.75` (array) - An array of arrays of [x, y]
++ points: `[[0.25,0.25],[0.75,0.25],[0.75,0.75],[0.25,0.75]]` (array) - An array of arrays of [x, y]
 
 ## `privacyZones` (array[`privacyZone`])
 
@@ -2811,9 +2818,9 @@ Opens a new timelapse data channel and returns the name of the channel.
 + id (number) - ID of the zone. (start from 1)
 + name: `null` (string, default) - Name of the zone.
 + color: `null` (string, default) - Color of the zone.
-+ points: `0.25,0.25,0.75,0.25,0.75,0.75,0.25,0.75` (array) - An array of arrays of [x, y]
++ points: `[[0.25,0.25],[0.75,0.25],[0.75,0.75],[0.25,0.75]]` (array) - An array of arrays of [x, y]
 + sensitivity: `50` (number, default) - Smart detection sensitivity (0-100).
-+ objectTypes: `` (array, default) - A list of object types to detect.
++ objectTypes: `[]` (array, default) - A list of object types to detect.
 + isTriggerLightEnabled: `false` (boolean, default) - Whether the G5 IR extender is enabled.
 + direction: `both` (enum[string], default) - Line counting direction
   + `AB`
@@ -2847,9 +2854,9 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 ## smartDetectSettings (object)
 
-+ objectTypes: `` (array, default) - What object types do the camera needs to detect.
-+ autoTrackingObjectTypes: `` (array, default) - What object types do the camera needs to track.
-+ audioTypes: `` (array, default) - What audio types do the cameras needs to detect
++ objectTypes: `[]` (array, default) - What object types do the camera needs to detect.
++ autoTrackingObjectTypes: `[]` (array, default) - What object types do the camera needs to track.
++ audioTypes: `[]` (array, default) - What audio types do the cameras needs to detect
 
 ## `smartDetectSettingss` (array[`smartDetectSettings`])
 
@@ -2858,9 +2865,9 @@ Opens a new timelapse data channel and returns the name of the channel.
 + id (number) - ID of the zone. (start from 1)
 + name: `null` (string, default) - Name of the zone.
 + color: `null` (string, default) - Color of the zone.
-+ points: `0.25,0.25,0.75,0.25,0.75,0.75,0.25,0.75` (array) - An array of arrays of [x, y]
++ points: `[[0.25,0.25],[0.75,0.25],[0.75,0.75],[0.25,0.75]]` (array) - An array of arrays of [x, y]
 + sensitivity: `50` (number, default) - Smart detection sensitivity (0-100).
-+ objectTypes: `` (array, default) - A list of object types to detect.
++ objectTypes: `[]` (array, default) - A list of object types to detect.
 + isTriggerLightEnabled: `true` (boolean, default) - Whether the G5 IR extender is enabled.
 
 ## `smartDetectZones` (array[`smartDetectZone`])
@@ -2897,10 +2904,10 @@ Opens a new timelapse data channel and returns the name of the channel.
 + enabled: `false` (boolean, default) - Whether the camera sharing is enabled.
 + token: `null` (string, default) - Connection token.
 + shareLink: `null` (string, default) - External link to view the shared stream.
-+ expires (number) - Unix timestamp of shared link expiry.
++ expires: `1445408038748` (number) - Unix timestamp of shared link expiry.
 + sharedByUserId: `null` (string, default) - Id of user who shared the camera stream.
 + sharedByUser: `null` (string, default) - User who shared the camera stream.
-+ maxStreams (number) - Maximum allowed simultaneous streams.
++ maxStreams: `1` (number) - Maximum allowed simultaneous streams.
 
 ## `streamSharings` (array[`streamSharing`])
 
@@ -3004,15 +3011,15 @@ Opens a new timelapse data channel and returns the name of the channel.
 + connectionHost: `null` (string, default) - The ip or hostname the device uses to connect.
 + type: `null` (string, default) - The device model name.
 + name: `null` (string, default) - The name of the device.
-+ upSince (number) - Unix timestamp of when the device started up.
-+ uptime (number) - device uptime in second.
-+ lastSeen (number) - Unix timestamp of when the device was last connected.
-+ connectedSince (number) - Unix timestamp of when the device connected to the NVR.
++ upSince: `1445408038748` (number) - Unix timestamp of when the device started up.
++ uptime: `1234567890` (number) - device uptime in second.
++ lastSeen: `1445408038748` (number) - Unix timestamp of when the device was last connected.
++ connectedSince: `1445408038748` (number) - Unix timestamp of when the device connected to the NVR.
 + state: `DISCONNECTED` (enum[string], default) - Connection state of the device.
   + `CONNECTED`
   + `CONNECTING`
   + `DISCONNECTED`
-+ lastDisconnect (number) - Unix timestamp of the last time the device disconnected.
++ lastDisconnect: `1445408038748` (number) - Unix timestamp of the last time the device disconnected.
 + hardwareRevision: `null` (string, default) - Hardware revision of the device
 + firmwareVersion: `null` (string, default) - The version of firmware that is installed on the device.
 + latestFirmwareVersion: `null` (string, default) - The latest firmware version of the device.
@@ -3045,18 +3052,17 @@ Opens a new timelapse data channel and returns the name of the channel.
 + volume: `80` (number, default) - Speaker volume: a number from 0-100.
 + trackNo: `1` (number, default) - The track number currently being used by chime
 + repeatTimes: `1` (number, default) - Repeat time of playing chime
-+ speakerTrackList: `` (array, default) - available speaker track list of chime
++ speakerTrackList: `[]` (array, default) - available speaker track list of chime
 + isProbingForWifi: `false` (boolean, default) - Whether the device is probing for a network over wireless uplink
 + apMac: `80:2a:a8:13:0b:56` (string) - The MAC address of the AP that discovered this chime over wireless uplink
-+ apRssi (number) - The received signal strength indication of the AP that discovered this chime over wireless uplink
++ apRssi: `60` (number) - The received signal strength indication of the AP that discovered this chime over wireless uplink
 + apMgmtIp: `null` (string, default) - The management IP address of the AP that discovered this chime over wireless uplink
 + elementInfo: `SEVMTE8=` (string) - The element information provided by this chime while it was probing for a wireless network
 + wifiConnectionState (wifiConnectionState) - Wi-Fi connection state of the device.
-+ lastRing (number) - Unix timestamp of the last time the chime rang.
++ lastRing: `1445408038748` (number) - Unix timestamp of the last time the chime rang.
 + isWirelessUplinkEnabled: `true` (boolean, default) - is wireless uplink enabled?
 + cameraIds (array[string]) - The list of paired cameras. (Doorbell series)
 + featureFlags (deviceFeatureFlags) - Feature flags of the chime
-+ hasHttpsClientOTA (undefined)
 + userConfiguredAp: `false` (boolean, default) - Whether the connected AP is user configured
 + platform (string) - The chime platform
 + ringSettings (array[ringSettings]) - The list of paired cameras ring settings. (Doorbell series)
@@ -3076,7 +3082,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 + id: `5be5fbde01331d19da0003e9`(string) - Primary key.
 + event (string) - Which event this pre-processed data belongs to.
-+ labels: `` (INTEGER[], default) - labels of the event
++ labels: `[]` (array[number], default) - labels of the event
 + identities (array) - identifieds values
 
 ## `detectionLabels` (array[`detectionLabel`])
@@ -3095,15 +3101,15 @@ Opens a new timelapse data channel and returns the name of the channel.
 + connectionHost: `null` (string, default) - The ip or hostname the device uses to connect.
 + type: `null` (string, default) - The device model name.
 + name: `null` (string, default) - The name of the device.
-+ upSince (number) - Unix timestamp of when the device started up.
-+ uptime (number) - device uptime in second.
-+ lastSeen (number) - Unix timestamp of when the device was last connected.
-+ connectedSince (number) - Unix timestamp of when the device connected to the NVR.
++ upSince: `1445408038748` (number) - Unix timestamp of when the device started up.
++ uptime: `1234567890` (number) - device uptime in second.
++ lastSeen: `1445408038748` (number) - Unix timestamp of when the device was last connected.
++ connectedSince: `1445408038748` (number) - Unix timestamp of when the device connected to the NVR.
 + state: `DISCONNECTED` (enum[string], default) - Connection state of the device.
   + `CONNECTED`
   + `CONNECTING`
   + `DISCONNECTED`
-+ lastDisconnect (number) - Unix timestamp of the last time the device disconnected.
++ lastDisconnect: `1445408038748` (number) - Unix timestamp of the last time the device disconnected.
 + hardwareRevision: `null` (string, default) - Hardware revision of the device
 + firmwareVersion: `null` (string, default) - The version of firmware that is installed on the device.
 + latestFirmwareVersion: `null` (string, default) - The latest firmware version of the device.
@@ -3154,7 +3160,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + batteryStatus (doorlockBatteryStatus) - Battery status.
 + bridge (string) - Which bridge is able to connect to the doorlock.
 + camera (string) - Which camera is configured to be paired to the doorlock.
-+ bridgeCandidates: `` (array[bridgeCandidate], default) - A list of bridge candidates for adoption and reconnection.
++ bridgeCandidates: `[]` (array[bridgeCandidate], default) - A list of bridge candidates for adoption and reconnection.
 + hasHomekit (boolean) - Whether the doorlock and bridge support homekit.
 
 ## `doorlocks` (array[`doorlock`])
@@ -3178,7 +3184,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + packageThumbnail (string) - The thumbnail that this partition has a reference to
 + heatmap (string) - The heatmap that this partition has a reference to
 + score: `0` (number, default) - The highest motion score in this event.
-+ smartDetectTypes: `` (enum[array], default) - A list of detected object types in this smart detection event.
++ smartDetectTypes: `[]` (enum[array], default) - A list of detected object types in this smart detection event.
   + `person`
   + `vehicle`
   + `package`
@@ -3194,9 +3200,9 @@ Opens a new timelapse data channel and returns the name of the channel.
   + `alrmBurglar`
   + `alrmCarHorn`
   + `alrmGlassBreak`
-+ smartDetectEvents: `` (array, default) - A list of related smart detect event IDs.
++ smartDetectEvents: `[]` (array, default) - A list of related smart detect event IDs.
 + user (string) - Which user this event belongs to. If null, it's not an access event
-+ metadata: `[object Object]` (object, default) - Metadata attached to this event.
++ metadata (object) - Metadata attached to this event.
 + deletionType (enum[string]) - Is it manual deletion by user or automatic by scripts
   + `manual`
   + `automatic`
@@ -3207,7 +3213,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 + id: `5be5fbde01331d19da0003e9`(string) - Primary key.
 + name: `null` (string, default) - The name of this device-group
-+ items: `` (array, default) - The items of this device-group, each item format like "<device_modelKey>:<device_id>".
++ items: `[]` (array, default) - The items of this device-group, each item format like "<device_modelKey>:<device_id>".
 
 ## `deviceGroups` (array[`deviceGroup`])
 
@@ -3215,7 +3221,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 + id: `5be5fbde01331d19da0003e9`(string) - Primary key.
 + name (string) - The name of this role.
-+ permissions: `` (array, default) - The list of permissions granted to users with this role.
++ permissions: `[]` (array, default) - The list of permissions granted to users with this role.
 + type: `custom` (enum[string], default) - The type of group.
   + `preset`
   + `custom`
@@ -3306,15 +3312,15 @@ Opens a new timelapse data channel and returns the name of the channel.
 + connectionHost: `null` (string, default) - The ip or hostname the device uses to connect.
 + type: `null` (string, default) - The device model name.
 + name: `null` (string, default) - The name of the device.
-+ upSince (number) - Unix timestamp of when the device started up.
-+ uptime (number) - device uptime in second.
-+ lastSeen (number) - Unix timestamp of when the device was last connected.
-+ connectedSince (number) - Unix timestamp of when the device connected to the NVR.
++ upSince: `1445408038748` (number) - Unix timestamp of when the device started up.
++ uptime: `1234567890` (number) - device uptime in second.
++ lastSeen: `1445408038748` (number) - Unix timestamp of when the device was last connected.
++ connectedSince: `1445408038748` (number) - Unix timestamp of when the device connected to the NVR.
 + state: `DISCONNECTED` (enum[string], default) - Connection state of the device.
   + `CONNECTED`
   + `CONNECTING`
   + `DISCONNECTED`
-+ lastDisconnect (number) - Unix timestamp of the last time the device disconnected.
++ lastDisconnect: `1445408038748` (number) - Unix timestamp of the last time the device disconnected.
 + hardwareRevision: `null` (string, default) - Hardware revision of the device
 + firmwareVersion: `null` (string, default) - The version of firmware that is installed on the device.
 + latestFirmwareVersion: `null` (string, default) - The latest firmware version of the device.
@@ -3349,7 +3355,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + lightModeSettings (lightModeSettings) - User Selected script light Mode Settings for light.
 + camera (string) - Which camera is configured to be paired to this light.
 + isPirMotionDetected: `false` (boolean, default) - Whether the light PIR is currently detecting motion
-+ lastMotion (number) - Unix timestamp of the last PIR trigger.
++ lastMotion: `1445408038748` (number) - Unix timestamp of the last PIR trigger.
 + isDark: `false` (boolean, default) - Whether the floodlight is currently in dark scene.
 + isLightOn: `false` (boolean, default) - Whether the floodlight main LED is currently on.
 + isLocating: `false` (boolean, default) - Whether the floodlight is currently in locating.
@@ -3459,7 +3465,7 @@ Opens a new timelapse data channel and returns the name of the channel.
   + `updateAvailable`
   + `unknown`
 + firmware: `null` (string, default) - The version of firmware that is installed on the device.
-+ startupTime (number) - Unix timestamp in seconds of when the device started up.
++ startupTime: `1612521000` (number) - Unix timestamp in seconds of when the device started up.
 + guid: `null` (string, default) - Unique id of the device.
 + directConnectDomain: `null` (string, default) - Direct connect domain.
 + shortname: `null` (string, default) - Short name of the device.
@@ -3467,8 +3473,8 @@ Opens a new timelapse data channel and returns the name of the channel.
 + isManaged: `false` (boolean, default) - Whether the device is being managed.
 + productLine: `null` (string, default) - The product line.
 + images (deviceImage) - Device images.
-+ metadata: `[object Object]` (object, default) - Metadata of the device.
-+ capabilities: `` (array, default) - Capabilities of the device.
++ metadata (object) - Metadata of the device.
++ capabilities: `[]` (array, default) - Capabilities of the device.
 
 ## `networkDevices` (array[`networkDevice`])
 
@@ -3490,11 +3496,11 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 ## dbRecoveryOptions (object)
 
-+ canRecover: `null` (boolean, default) - Whether the DB recovery is possible.
-+ hddFailing: `null` (boolean, default) - Whether ustorage reports HDD as failing.
-+ partitionReadonly: `null` (boolean, default) - Whether Protect partition is marked as readonly.
-+ hasDbBackup: `null` (boolean, default) - Whether DB backup is available for current Protect version.
-+ hasConfigBackup: `null` (boolean, default) - Whether config backup is available from download.
++ canRecover (boolean) - Whether the DB recovery is possible.
++ hddFailing (boolean) - Whether ustorage reports HDD as failing.
++ partitionReadonly (boolean) - Whether Protect partition is marked as readonly.
++ hasDbBackup (boolean) - Whether DB backup is available for current Protect version.
++ hasConfigBackup (boolean) - Whether config backup is available from download.
 
 ## `dbRecoveryOptionss` (array[`dbRecoveryOptions`])
 
@@ -3516,7 +3522,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 + defaultMessageText: `WELCOME` (string, default) - Default text to display on the LCD screen.
 + defaultMessageResetTimeoutMs: `60000` (number, default) - Default timeout for resetting LCD screen to the default message.
-+ customMessages: `` (array, default) - A list of custom doorbell messages.
++ customMessages: `[]` (array, default) - A list of custom doorbell messages.
 + allMessages (array) - All the messages (default + custom).
 
 ## `doorbellSettingss` (array[`doorbellSettings`])
@@ -3554,9 +3560,9 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 + isAway: `false` (boolean, default) - If all users are away.
 + isGeofencingEnabled: `false` (boolean, default) - Whether geofencing for this device is enabled.
-+ latitude (number) - Latitude where device is located.
-+ longitude (number) - Longitude where device is located.
-+ radius (number) - Radius of geofence area. This affects the sensitivity of home/away status.
++ latitude: `24.089469` (number) - Latitude where device is located.
++ longitude: `56.948924` (number) - Longitude where device is located.
++ radius: `56.948924` (number) - Radius of geofence area. This affects the sensitivity of home/away status.
 
 ## `locationSettingss` (array[`locationSettings`])
 
@@ -3578,9 +3584,9 @@ Opens a new timelapse data channel and returns the name of the channel.
 + ports (object) - key/value map of ports used.
 + upSince (number) - The NVR upSince. [ms]
 + uptime: `1445408038748` (number) - System uptime in milliseconds.
-+ lastSeen (number) - Unix timestamp of when the NVR was last seen.
++ lastSeen: `1445408038748` (number) - Unix timestamp of when the NVR was last seen.
 + isUpdating: `false` (boolean, default) - If the NVR is currently updating
-+ lastUpdateAt (number) - Unix timestamp of when the nvr was last updated.
++ lastUpdateAt: `1445408038748` (number) - Unix timestamp of when the nvr was last updated.
 + isStation: `false` (boolean, default) - Whether or not this NVR is connected as a wifi station
 + enableAutomaticBackups: `true` (boolean, default) - Whether or not to enable automatic backups.
 + enableStatsReporting: `false` (boolean, default) - Whether or not to enable stats gathering/reporting.
@@ -3596,7 +3602,7 @@ Opens a new timelapse data channel and returns the name of the channel.
   + `beta`
   + `release-candidate`
   + `release`
-+ hosts: `192.168.0.100` (array) - An array of hosts.
++ hosts: `["192.168.0.100"]` (array) - An array of hosts.
 + enableBridgeAutoAdoption: `true` (boolean, default) - Enable auto-adoption of discovered bridges.
 + dbRecoveryOptions (dbRecoveryOptions) - DB recovery options.
 + type (string) - The NVR model name.
@@ -3606,7 +3612,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + network (string) - Network description.
 + hardwareId: `ee03d4db-ecfd-55e7-9921-665d17c93052` (string) - hardware id
 + hardwareRevision: `113-02247-04` (string) - human readable version of bom
-+ hostType (number) - host type
++ hostType: `59712` (number) - host type
 + hostShortname: `null` (string, default) - Device model that hosts the controller.
 + isHardware: `false` (boolean, default) - is hardware nvr?
 + isWirelessUplinkEnabled: `false` (boolean, default) - is wireless uplink enabled for all devices?
@@ -3633,7 +3639,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + isRecordingDisabled: `false` (boolean, default) - Recording is disabled.
 + isRecordingMotionOnly: `false` (boolean, default) - Record motion only.
 + isInsightsEnabled: `true` (boolean, default) - Enable/Disable Insights
-+ maxCameraCapacity: `[object Object]` (object, default) - The max camera capacity of NVR.
++ maxCameraCapacity (object) - The max camera capacity of NVR.
 + cameraUtilization (number) - Percentage of the current cameras capacity of the NVR.
 + storageStats (nvrStatsStorage) - Storage statistics for the nvr.
 + isRecycling: `false` (boolean, default) - If recording files are getting recycled due to the lack of free disk space.
@@ -3641,7 +3647,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + skipFirmwareUpdate: `false` (boolean, default) - Skip device firmware auto update
 + countryCode: `null` (string, default) - Country code of console.
 + publicIp: `null` (string, default) - Public IP of console.
-+ cameraCapacity: `[object Object]` (object, default) - Camera capacity details
++ cameraCapacity (object) - Camera capacity details
 + hardDriveState: `ok` (string, default) - State of hard drives
 + isProtectUpdatable: `false` (boolean, default) - whether updatable from ucore
 + streamSharingAvailable: `false` (boolean, default) - Whether camera stream sharing feature is available.
@@ -3652,7 +3658,7 @@ Opens a new timelapse data channel and returns the name of the channel.
   + `ssd-corrupted`
   + `hdd-corrupted`
   + `hdd-ejected`
-+ portStatus: `` (array, default) - Console port occupation status.
++ portStatus: `[]` (array, default) - Console port occupation status.
 + wanIp: `null` (string, default) - WAN IP of console.
 + hasGateway: `false` (boolean, default) - Define if console has gateway
 + isUcoreUpdatable: `false` (boolean, default) - Define if console firmware is updatable or not
@@ -3661,8 +3667,8 @@ Opens a new timelapse data channel and returns the name of the channel.
 + marketName (string) - The market name of console
 + isPrimary: `false` (boolean, default) - Whether or not this NVR is primary.
 + isStacked (boolean) - Whether or not this NVR is (member) stack.
-+ lastDriveSlowEvent (number) - Unix timestamp of when the nvr had last driveSlow event.
-+ isUCoreStacked: `null` (boolean, default) - Whether or not the ucore is stacked. `null` means not initialized from the UCore yet.
++ lastDriveSlowEvent: `1445408038748` (number) - Unix timestamp of when the nvr had last driveSlow event.
++ isUCoreStacked (boolean) - Whether or not the ucore is stacked. `null` means not initialized from the UCore yet.
 
 ## `nvrs` (array[`nvr`])
 
@@ -3684,9 +3690,9 @@ Opens a new timelapse data channel and returns the name of the channel.
 + ports (object) - key/value map of ports used.
 + upSince (number) - The NVR upSince. [ms]
 + uptime: `1445408038748` (number) - System uptime in milliseconds.
-+ lastSeen (number) - Unix timestamp of when the NVR was last seen.
++ lastSeen: `1445408038748` (number) - Unix timestamp of when the NVR was last seen.
 + isUpdating: `false` (boolean, default) - If the NVR is currently updating
-+ lastUpdateAt (number) - Unix timestamp of when the nvr was last updated.
++ lastUpdateAt: `1445408038748` (number) - Unix timestamp of when the nvr was last updated.
 + isStation: `false` (boolean, default) - Whether or not this NVR is connected as a wifi station
 + enableAutomaticBackups: `true` (boolean, default) - Whether or not to enable automatic backups.
 + enableStatsReporting: `false` (boolean, default) - Whether or not to enable stats gathering/reporting.
@@ -3702,7 +3708,7 @@ Opens a new timelapse data channel and returns the name of the channel.
   + `beta`
   + `release-candidate`
   + `release`
-+ hosts: `192.168.0.100` (array) - An array of hosts.
++ hosts: `["192.168.0.100"]` (array) - An array of hosts.
 + enableBridgeAutoAdoption: `true` (boolean, default) - Enable auto-adoption of discovered bridges.
 + dbRecoveryOptions (dbRecoveryOptions) - DB recovery options.
 + type (string) - The NVR model name.
@@ -3711,7 +3717,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + isUCoreSetup: `false` (boolean, default) - Whether the UCore is setup.
 + hardwareId: `ee03d4db-ecfd-55e7-9921-665d17c93052` (string) - hardware id
 + hardwareRevision: `113-02247-04` (string) - human readable version of bom
-+ hostType (number) - host type
++ hostType: `59712` (number) - host type
 + hostShortname: `null` (string, default) - Device model that hosts the controller.
 + isHardware: `false` (boolean, default) - is hardware nvr?
 + isWirelessUplinkEnabled: `false` (boolean, default) - is wireless uplink enabled for all devices?
@@ -3738,7 +3744,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + isRecordingDisabled: `false` (boolean, default) - Recording is disabled.
 + isRecordingMotionOnly: `false` (boolean, default) - Record motion only.
 + isInsightsEnabled: `true` (boolean, default) - Enable/Disable Insights
-+ maxCameraCapacity: `[object Object]` (object, default) - The max camera capacity of NVR.
++ maxCameraCapacity (object) - The max camera capacity of NVR.
 + cameraUtilization (number) - Percentage of the current cameras capacity of the NVR.
 + storageStats (nvrStatsStorage) - Storage statistics for the nvr.
 + isRecycling: `false` (boolean, default) - If recording files are getting recycled due to the lack of free disk space.
@@ -3746,7 +3752,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + skipFirmwareUpdate: `false` (boolean, default) - Skip device firmware auto update
 + countryCode: `null` (string, default) - Country code of console.
 + publicIp: `null` (string, default) - Public IP of console.
-+ cameraCapacity: `[object Object]` (object, default) - Camera capacity details
++ cameraCapacity (object) - Camera capacity details
 + hardDriveState: `ok` (string, default) - State of hard drives
 + isProtectUpdatable: `false` (boolean, default) - whether updatable from ucore
 + streamSharingAvailable: `false` (boolean, default) - Whether camera stream sharing feature is available.
@@ -3757,7 +3763,7 @@ Opens a new timelapse data channel and returns the name of the channel.
   + `ssd-corrupted`
   + `hdd-corrupted`
   + `hdd-ejected`
-+ portStatus: `` (array, default) - Console port occupation status.
++ portStatus: `[]` (array, default) - Console port occupation status.
 + wanIp: `null` (string, default) - WAN IP of console.
 + hasGateway: `false` (boolean, default) - Define if console has gateway
 + isUcoreUpdatable: `false` (boolean, default) - Define if console firmware is updatable or not
@@ -3780,7 +3786,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + status: `pending` (enum[string], default) - User agreement status.
   + `agreed`
   + `declined`
-+ lastUpdateAt (number) - Unix timestamp of when the status was last updated.
++ lastUpdateAt: `1445408038748` (number) - Unix timestamp of when the status was last updated.
 
 ## `smartDetectAgreements` (array[`smartDetectAgreement`])
 
@@ -3790,7 +3796,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + recordingRate (number) - Total estimated recording byte rate in ms
 + capacity: `0` (number, default) - Total estimated time storage capacity in ms
 + remainingCapacity: `0` (number, default) - Remaining estimated time storage capacity in ms
-+ recordingSpace: `[object Object]` (object, default)
++ recordingSpace (object)
 + storageDistribution (storageDistribution) - Storage distribution.
 
 ## `nvrStatsStorages` (array[`nvrStatsStorage`])
@@ -3969,7 +3975,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + camera: `CA1B2C3` (string) - What camera this audio level entry belongs to.
 + start: `0` (number, default) - Start value of audio levels hourly update
 + end: `0` (number, default) - End timestamp value of audio levels hourly update
-+ levels: `` (SMALLINT[], default) - Levels 
++ levels: `[]` (array[number], default) - Levels 
 
 ## `audioLevels` (array[`audioLevel`])
 
@@ -4021,7 +4027,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + name: `null` (string, default) - The name of this schedule item.
 + id: `null` (string, default) - The id of this schedule item.
 + startDateOfMonth: `1` (number, default) - The day of month this schedule item applies.
-+ startDaysOfWeek: `` (array, default) - The weekday this schedule item applies.
++ startDaysOfWeek: `[]` (array, default) - The weekday this schedule item applies.
 + startHour: `0` (number, default) - Start hour of the day (0-24) when this schedule item applies.
 + startMinute: `0` (number, default) - Start minute of the hour (0-60) when this schedule item applies.
 + durationMinutes: `1` (number, default) - Duration of minutes (1-10080) when this schedule item applies.
@@ -4063,8 +4069,8 @@ Opens a new timelapse data channel and returns the name of the channel.
 ## humiditySensorSettings (object)
 
 + isEnabled: `false` (boolean, default) - Enable relative humidity sensor.
-+ lowThreshold (number) - Humidity low level threshold from 1 to 99 (%).
-+ highThreshold (number) - Humidity high level threshold from 1 to 99 (%).
++ lowThreshold: `30` (number) - Humidity low level threshold from 1 to 99 (%).
++ highThreshold: `80` (number) - Humidity high level threshold from 1 to 99 (%).
 + margin: `1` (number, default) - Humidity threshold detection hysteresis margin (%).
 
 ## `humiditySensorSettingss` (array[`humiditySensorSettings`])
@@ -4090,8 +4096,8 @@ Opens a new timelapse data channel and returns the name of the channel.
 ## lightSensorSettings (object)
 
 + isEnabled: `false` (boolean, default) - Enable ambient light sensor.
-+ lowThreshold (number) - Ambient light interrupt threshold low level from 1 to 503192 (Lux).
-+ highThreshold (number) - Ambient light interrupt threshold high level from 1 to 503192 (Lux).
++ lowThreshold: `20` (number) - Ambient light interrupt threshold low level from 1 to 503192 (Lux).
++ highThreshold: `100` (number) - Ambient light interrupt threshold high level from 1 to 503192 (Lux).
 + margin: `10` (number, default) - Ambient light threshold detection hysteresis margin (Lux).
 
 ## `lightSensorSettingss` (array[`lightSensorSettings`])
@@ -4110,15 +4116,15 @@ Opens a new timelapse data channel and returns the name of the channel.
 + connectionHost: `null` (string, default) - The ip or hostname the device uses to connect.
 + type: `null` (string, default) - The device model name.
 + name: `null` (string, default) - The name of the device.
-+ upSince (number) - Unix timestamp of when the device started up.
-+ uptime (number) - device uptime in second.
-+ lastSeen (number) - Unix timestamp of when the device was last connected.
-+ connectedSince (number) - Unix timestamp of when the device connected to the NVR.
++ upSince: `1445408038748` (number) - Unix timestamp of when the device started up.
++ uptime: `1234567890` (number) - device uptime in second.
++ lastSeen: `1445408038748` (number) - Unix timestamp of when the device was last connected.
++ connectedSince: `1445408038748` (number) - Unix timestamp of when the device connected to the NVR.
 + state: `DISCONNECTED` (enum[string], default) - Connection state of the device.
   + `CONNECTED`
   + `CONNECTING`
   + `DISCONNECTED`
-+ lastDisconnect (number) - Unix timestamp of the last time the device disconnected.
++ lastDisconnect: `1445408038748` (number) - Unix timestamp of the last time the device disconnected.
 + hardwareRevision: `null` (string, default) - Hardware revision of the device
 + firmwareVersion: `null` (string, default) - The version of firmware that is installed on the device.
 + latestFirmwareVersion: `null` (string, default) - The latest firmware version of the device.
@@ -4155,12 +4161,12 @@ Opens a new timelapse data channel and returns the name of the channel.
   + `garage`
   + `leak`
   + `none`
-+ leakDetectedAt (number) - Unix timestamp when the sensor detected a water leak, nullable.
-+ tamperingDetectedAt (number) - Unix timestamp when the sensor detected tampering, nullable.
++ leakDetectedAt: `1445408038748` (number) - Unix timestamp when the sensor detected a water leak, nullable.
++ tamperingDetectedAt: `1445408038748` (number) - Unix timestamp when the sensor detected tampering, nullable.
 + isOpened: `false` (boolean, default) - Whether the door/window/garage is opened.
-+ openStatusChangedAt (number) - Unix timestamp when the door/window/garage was last opened or closed, nullable.
-+ alarmTriggeredAt (number) - Unix timestamp when the smoke or carbon monoxide alarm was triggered, nullable.
-+ motionDetectedAt (number) - Unix timestamp when the last motion was detected.
++ openStatusChangedAt: `1445408038748` (number) - Unix timestamp when the door/window/garage was last opened or closed, nullable.
++ alarmTriggeredAt: `1445408038748` (number) - Unix timestamp when the smoke or carbon monoxide alarm was triggered, nullable.
++ motionDetectedAt: `1445408038748` (number) - Unix timestamp when the last motion was detected.
 + stats (sensorStats) - Sensor statistics.
 + bluetoothConnectionState (bluetoothConnectionState) - Bluetooth connection state of the sensor.
 + batteryStatus (sensorBatteryStatus) - Battery status.
@@ -4172,7 +4178,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + ledSettings (sensorLedSettings) - Status LED settings.
 + bridge (string) - Which bridge is able to connect to the sensor.
 + camera (string) - Which camera is configured to be paired to the sensor.
-+ bridgeCandidates: `` (array[bridgeCandidate], default) - A list of bridge candidates for adoption and reconnection.
++ bridgeCandidates: `[]` (array[bridgeCandidate], default) - A list of bridge candidates for adoption and reconnection.
 
 ## `sensors` (array[`sensor`])
 
@@ -4199,8 +4205,8 @@ Opens a new timelapse data channel and returns the name of the channel.
 ## temperatureSensorSettings (object)
 
 + isEnabled: `false` (boolean, default) - Enable temperature sensor.
-+ lowThreshold (number) - Temperature low level threshold from -39 to 124 (C).
-+ highThreshold (number) - Temperature high level threshold from -39 to 124 (C).
++ lowThreshold: `20` (number) - Temperature low level threshold from -39 to 124 (C).
++ highThreshold: `25` (number) - Temperature high level threshold from -39 to 124 (C).
 + margin: `0.1` (number, default) - Temperature threshold detection hysteresis margin (C).
 
 ## `temperatureSensorSettingss` (array[`temperatureSensorSettings`])
@@ -4218,7 +4224,8 @@ Opens a new timelapse data channel and returns the name of the channel.
 + lastDetectedAt: `0` (number, default) - last object detected at
 + isNotificationEnabled: `false` (boolean, default) - notification enabled
 + imagePath (string) - The image path of group.
-+ createdAt (function Date() { [native code] }) - the create time of this record
++ createdAt (string) - the create time of this record
++ tags: `[]` (array[string], default) - tags of the group
 + description (string) - description of the group
 
 ## `smartDetectObjectGroups` (array[`smartDetectObjectGroup`])
@@ -4240,7 +4247,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 + id: `5be5fbde01331d19da0003e9`(string) - Primary key.
 + camera (string) - Which camera this smart detection track belongs to.
-+ payload: `[object Object]` (object, default) - Raw Payload of the smart detection
++ payload (object) - Raw Payload of the smart detection
 + timestamp: `1445408040748` (number) - Unix timestamp of the smartDetect raw data.
 
 ## `smartDetectRaws` (array[`smartDetectRaw`])
@@ -4250,14 +4257,14 @@ Opens a new timelapse data channel and returns the name of the channel.
 + id: `1` (string) - The ID of the object in the corresponding event.
 + timestamp: `1445408038748` (number) - Unix timestamp of the time of the object detected in milliseconds.
 + level: `20` (number) - The confidence level of the object detection. (0-100)
-+ coord: `7,19,411,746` (array) - The coordinates of the object detected [x1, y1, x2, y2]. (0-1000)
++ coord: `[7,19,411,746]` (array) - The coordinates of the object detected [x1, y1, x2, y2]. (0-1000)
 + licensePlate: `233051P` (string) - Recognized license plate
 + objectType: `person` (string) - The type of object detected.
-+ zones: `1,2` (array) - The IDs of the zones that the object detected in.
-+ lines: `1,3,4` (array) - The IDs of the lines that the object crossed.
++ zones: `[1,2]` (array) - The IDs of the zones that the object detected in.
++ lines: `[1,3,4]` (array) - The IDs of the lines that the object crossed.
 + duration: `300` (number) - The display duration of the bounding box of the object in milliseconds.
 + stationary: `false` (boolean) - Whether this track includes stationary vehicle
-+ attributes: `[object Object]` (object) - The detected attributes of this track
++ attributes (object) - The detected attributes of this track
 
 ## `smartDetectTrackPayloads` (array[`smartDetectTrackPayload`])
 
@@ -4364,8 +4371,8 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 + isAway: `true` (boolean, default) - If the user is away (true if location not available).
 + homeAwaySince: `1445408038748` (number) - Unix timestamp of when the user's location status changed.
-+ latitude (number) - The user's current latitude.
-+ longitude (number) - The user's current longitude.
++ latitude: `24.089469` (number) - The user's current latitude.
++ longitude: `56.948924` (number) - The user's current longitude.
 
 ## `userLocations` (array[`userLocation`])
 
@@ -4382,7 +4389,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + scopes (array) - The user scope permissions from ucore/ulp-go
 + allPermissions (array) - The user's all permissions.
 + groups (array[string]) - A list of groups this user is a member of.
-+ permissions: `` (array, default) - The list of permissions granted to this user.
++ permissions: `[]` (array, default) - The list of permissions granted to this user.
 + location (userLocation) - The user's current location.
 + lastLoginIp: `66.129.12.24` (string) - The last IP the user logged in from.
 + lastLoginTime: `1445408038748` (number) - Unix timestamp of the last time the user logged in.
@@ -4444,15 +4451,15 @@ Opens a new timelapse data channel and returns the name of the channel.
 ## cameraAlertItem (object)
 
 + camera: `CA1B2C3` (string) - The camera to which this alert item belongs (null means All Cameras).
-+ connectDisconnect: `` (enum[array]) - Alert actions to take when the camera connects/disconnects.
++ connectDisconnect: `[]` (enum[array]) - Alert actions to take when the camera connects/disconnects.
   + `email`
   + `push`
-+ motion: `email` (enum[array]) - Alert actions to take when the camera detects motion.
++ motion: `["email"]` (enum[array]) - Alert actions to take when the camera detects motion.
   + `email`
   + `push`
-+ ring: `push` (enum[array]) - Alert actions to take when the doorbell rings.
++ ring: `["push"]` (enum[array]) - Alert actions to take when the doorbell rings.
   + `push`
-+ smartDetect: `email` (enum[array]) - Alert actions to take when the camera detects objects.
++ smartDetect: `["email"]` (enum[array]) - Alert actions to take when the camera detects objects.
   + `email`
   + `push`
 
@@ -4460,10 +4467,10 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 ## systemAlertItem (object)
 
-+ connectDisconnect: `email` (enum[array]) - Alert action to take when the nvr connects/disconnects.
++ connectDisconnect: `["email"]` (enum[array]) - Alert action to take when the nvr connects/disconnects.
   + `email`
   + `push`
-+ update: `email,push` (enum[array]) - Alert action to take when there is update activity on the nvr.
++ update: `["email","push"]` (enum[array]) - Alert action to take when there is update activity on the nvr.
   + `email`
   + `push`
 
@@ -4472,10 +4479,10 @@ Opens a new timelapse data channel and returns the name of the channel.
 ## userAlertItem (object)
 
 + user: `CA1B2C3` (string) - The user to which this alert item belongs (null means all users).
-+ arrive: `push` (enum[array]) - Alert action to take when the user arrives on site.
++ arrive: `["push"]` (enum[array]) - Alert action to take when the user arrives on site.
   + `email`
   + `push`
-+ depart: `` (enum[array]) - Alert action to take when the user departs the site.
++ depart: `[]` (enum[array]) - Alert action to take when the user departs the site.
   + `email`
   + `push`
 
@@ -4513,83 +4520,83 @@ Opens a new timelapse data channel and returns the name of the channel.
 + firstName: `null` (string, default) - First name
 + email: `me@me.com` (string) - Email address
 + profileImg: `https://lh5.googleusercontent.com/-tIWGrA8WsDM/AAAAAAAAAAI/AAAAAAAAAHU/doQShUuGqb0/photo.jpg?sz=50` (string) - Profile img
-+ scopes: `` (array, default) - The user scope permissions from ucore/ulp-go
++ scopes: `[]` (array, default) - The user scope permissions from ucore/ulp-go
 
 ## `ucoreIdentities` (array[`ucoreIdentity`])
 
 ## detectionNotifications (object)
 
 + trigger (detectionTrigger) - Trigger identifying when to send notifications.
-+ ring: `email` (enum[array]) - Channels to send to, when doorbell rings.
++ ring: `["email"]` (enum[array]) - Channels to send to, when doorbell rings.
   + `email`
   + `push`
-+ motion: `email` (enum[array]) - Channels to send to, when motion detected.
++ motion: `["email"]` (enum[array]) - Channels to send to, when motion detected.
   + `email`
   + `push`
-+ person: `email` (enum[array]) - Channels to send to, when person detected.
++ person: `["email"]` (enum[array]) - Channels to send to, when person detected.
   + `email`
   + `push`
-+ vehicle: `email` (enum[array]) - Channels to send to, when vehicle detected.
++ vehicle: `["email"]` (enum[array]) - Channels to send to, when vehicle detected.
   + `email`
   + `push`
-+ animal: `email` (enum[array]) - Channels to send to, when animal detected.
++ animal: `["email"]` (enum[array]) - Channels to send to, when animal detected.
   + `email`
   + `push`
-+ package: `email` (enum[array]) - Channels to send to, when package detected.
++ package: `["email"]` (enum[array]) - Channels to send to, when package detected.
   + `email`
   + `push`
-+ alarmSmokeCmonx: `email` (enum[array]) - Channels to send to, when CO or smoke detected.
++ alarmSmokeCmonx: `["email"]` (enum[array]) - Channels to send to, when CO or smoke detected.
   + `email`
   + `push`
-+ alarmSmoke: `email` (enum[array]) - Channels to send to, when smoke detected.
++ alarmSmoke: `["email"]` (enum[array]) - Channels to send to, when smoke detected.
   + `email`
   + `push`
-+ alarmCmonx: `email` (enum[array]) - Channels to send to, when CO detected.
++ alarmCmonx: `["email"]` (enum[array]) - Channels to send to, when CO detected.
   + `email`
   + `push`
-+ alarmSiren: `email` (enum[array]) - Channels to send to, when siren detected.
++ alarmSiren: `["email"]` (enum[array]) - Channels to send to, when siren detected.
   + `email`
   + `push`
-+ alarmBabyCry: `email` (enum[array]) - Channels to send to, when baby cry detected.
++ alarmBabyCry: `["email"]` (enum[array]) - Channels to send to, when baby cry detected.
   + `email`
   + `push`
-+ alarmSpeak: `email` (enum[array]) - Channels to send to, when speak detected.
++ alarmSpeak: `["email"]` (enum[array]) - Channels to send to, when speak detected.
   + `email`
   + `push`
-+ alarmBark: `email` (enum[array]) - Channels to send to, when bark detected.
++ alarmBark: `["email"]` (enum[array]) - Channels to send to, when bark detected.
   + `email`
   + `push`
-+ alarmBurglar: `email` (enum[array]) - Channels to send to, when burglar detected.
++ alarmBurglar: `["email"]` (enum[array]) - Channels to send to, when burglar detected.
   + `email`
   + `push`
-+ alarmCarHorn: `email` (enum[array]) - Channels to send to, when car horn detected.
++ alarmCarHorn: `["email"]` (enum[array]) - Channels to send to, when car horn detected.
   + `email`
   + `push`
-+ alarmGlassBreak: `email` (enum[array]) - Channels to send to, when glass break detected.
++ alarmGlassBreak: `["email"]` (enum[array]) - Channels to send to, when glass break detected.
   + `email`
   + `push`
-+ sensorAlarm: `email` (enum[array]) - Channels to send to, when sensor warning detected.
++ sensorAlarm: `["email"]` (enum[array]) - Channels to send to, when sensor warning detected.
   + `email`
   + `push`
-+ batteryStatus: `email` (enum[array]) - Channels to send to, when battery status change detected
++ batteryStatus: `["email"]` (enum[array]) - Channels to send to, when battery status change detected
   + `email`
   + `push`
-+ doorlockOpen: `email` (enum[array]) - Channels to send to, when doorlock opened detected
++ doorlockOpen: `["email"]` (enum[array]) - Channels to send to, when doorlock opened detected
   + `email`
   + `push`
-+ doorlockClosed: `email` (enum[array]) - Channels to send to, when doorlock closed detected
++ doorlockClosed: `["email"]` (enum[array]) - Channels to send to, when doorlock closed detected
   + `email`
   + `push`
-+ extremeValues: `email` (enum[array]) - Channels to send to, when extreme values detected
++ extremeValues: `["email"]` (enum[array]) - Channels to send to, when extreme values detected
   + `email`
   + `push`
-+ waterLeak: `email` (enum[array]) - Channels to send to, when water leak detected
++ waterLeak: `["email"]` (enum[array]) - Channels to send to, when water leak detected
   + `email`
   + `push`
-+ sensorEntryStateChange: `email` (enum[array]) - Channels to send to, when sensor entry state change detected.
++ sensorEntryStateChange: `["email"]` (enum[array]) - Channels to send to, when sensor entry state change detected.
   + `email`
   + `push`
-+ faceGroupDetected: `email` (enum[array]) - Channels to send to, when face group detected.
++ faceGroupDetected: `["email"]` (enum[array]) - Channels to send to, when face group detected.
   + `email`
   + `push`
 + cameras (array[cameraDetections]) - The cameras notifications config.
@@ -4628,34 +4635,34 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 ## systemEventNotifications (object)
 
-+ deviceIssue: `email` (enum[array]) - Device issue notification channels.
++ deviceIssue: `["email"]` (enum[array]) - Device issue notification channels.
   + `email`
   + `push`
-+ applicationIssue: `email` (enum[array]) - Application issue notification channels.
++ applicationIssue: `["email"]` (enum[array]) - Application issue notification channels.
   + `email`
   + `push`
-+ deviceAdoptedRemoved: `email` (enum[array]) - Device adopted or removed notification channels.
++ deviceAdoptedRemoved: `["email"]` (enum[array]) - Device adopted or removed notification channels.
   + `email`
   + `push`
-+ deviceLimitationReached: `email` (enum[array]) - Device limitation reached notification channels.
++ deviceLimitationReached: `["email"]` (enum[array]) - Device limitation reached notification channels.
   + `email`
   + `push`
-+ deviceDiscovery: `email` (enum[array]) - Device discovery notification channels.
++ deviceDiscovery: `["email"]` (enum[array]) - Device discovery notification channels.
   + `email`
   + `push`
-+ deviceUpdateStatus: `email` (enum[array]) - Device update status notification channels.
++ deviceUpdateStatus: `["email"]` (enum[array]) - Device update status notification channels.
   + `email`
   + `push`
-+ adminAccess: `email` (enum[array]) - Admin access notification channels.
++ adminAccess: `["email"]` (enum[array]) - Admin access notification channels.
   + `email`
   + `push`
-+ adminChangeSettings: `email` (enum[array]) - Admin change notification channels.
++ adminChangeSettings: `["email"]` (enum[array]) - Admin change notification channels.
   + `email`
   + `push`
-+ adminRecordingClipsManipulations: `email` (enum[array]) - Admin recording clip manipulations notification channels.
++ adminRecordingClipsManipulations: `["email"]` (enum[array]) - Admin recording clip manipulations notification channels.
   + `email`
   + `push`
-+ adminGeolocation: `email` (enum[array]) - Geofence notification channels.
++ adminGeolocation: `["email"]` (enum[array]) - Geofence notification channels.
   + `email`
   + `push`
 
@@ -4666,49 +4673,49 @@ Opens a new timelapse data channel and returns the name of the channel.
 + camera: `CA1B2C3` (string) - The camera to which this notification belongs to.
 + trigger (motionTrigger) - Trigger describing when to send notifications.
 + inheritFromParent: `true` (boolean, default) - Inherit settings from the parent
-+ motion: `email` (enum[array]) - Channels to send to, when camera detects motion.
++ motion: `["email"]` (enum[array]) - Channels to send to, when camera detects motion.
   + `email`
   + `push`
-+ person: `email` (enum[array]) - Channels to send to, when camera detects people.
++ person: `["email"]` (enum[array]) - Channels to send to, when camera detects people.
   + `email`
   + `push`
-+ vehicle: `email` (enum[array]) - Channels to send to, when camera detects a vehicle.
++ vehicle: `["email"]` (enum[array]) - Channels to send to, when camera detects a vehicle.
   + `email`
   + `push`
-+ animal: `email` (enum[array]) - Channels to send to, when camera detects an animal.
++ animal: `["email"]` (enum[array]) - Channels to send to, when camera detects an animal.
   + `email`
   + `push`
-+ package: `email` (enum[array]) - Channels to send to, when camera detects a package.
++ package: `["email"]` (enum[array]) - Channels to send to, when camera detects a package.
   + `email`
   + `push`
-+ alarmSmokeCmonx: `email` (enum[array]) - Channels to send to, when camera detects a smoke/co alarm.
++ alarmSmokeCmonx: `["email"]` (enum[array]) - Channels to send to, when camera detects a smoke/co alarm.
   + `email`
   + `push`
-+ alarmSmoke: `email` (enum[array]) - Channels to send to, when camera detects a smoke alarm.
++ alarmSmoke: `["email"]` (enum[array]) - Channels to send to, when camera detects a smoke alarm.
   + `email`
   + `push`
-+ alarmCmonx: `email` (enum[array]) - Channels to send to, when camera detects a co alarm.
++ alarmCmonx: `["email"]` (enum[array]) - Channels to send to, when camera detects a co alarm.
   + `email`
   + `push`
-+ alarmSiren: `email` (enum[array]) - Channels to send to, when camera detects a siren alarm.
++ alarmSiren: `["email"]` (enum[array]) - Channels to send to, when camera detects a siren alarm.
   + `email`
   + `push`
-+ alarmBabyCry: `email` (enum[array]) - Channels to send to, when camera detects a baby cry alarm.
++ alarmBabyCry: `["email"]` (enum[array]) - Channels to send to, when camera detects a baby cry alarm.
   + `email`
   + `push`
-+ alarmSpeak: `email` (enum[array]) - Channels to send to, when camera detects a speak alarm.
++ alarmSpeak: `["email"]` (enum[array]) - Channels to send to, when camera detects a speak alarm.
   + `email`
   + `push`
-+ alarmBark: `email` (enum[array]) - Channels to send to, when camera detects a bark alarm.
++ alarmBark: `["email"]` (enum[array]) - Channels to send to, when camera detects a bark alarm.
   + `email`
   + `push`
-+ alarmBurglar: `email` (enum[array]) - Channels to send to, when camera detects a burglar alarm.
++ alarmBurglar: `["email"]` (enum[array]) - Channels to send to, when camera detects a burglar alarm.
   + `email`
   + `push`
-+ alarmCarHorn: `email` (enum[array]) - Channels to send to, when camera detects a car horn alarm.
++ alarmCarHorn: `["email"]` (enum[array]) - Channels to send to, when camera detects a car horn alarm.
   + `email`
   + `push`
-+ alarmGlassBreak: `email` (enum[array]) - Channels to send to, when camera detects a glass break alarm.
++ alarmGlassBreak: `["email"]` (enum[array]) - Channels to send to, when camera detects a glass break alarm.
   + `email`
   + `push`
 
@@ -4719,7 +4726,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + doorbell: `CA1B2C3` (string) - The camera to which this security alert belongs to.
 + trigger (motionTrigger) - Trigger describing when to send notifications.
 + inheritFromParent: `true` (boolean, default) - Inherit settings from the parent
-+ ring: `push` (enum[array]) - Channels to send to, when doorbell rings.
++ ring: `["push"]` (enum[array]) - Channels to send to, when doorbell rings.
   + `push`
 
 ## `doorbellDetections` (array[`doorbellDetection`])
@@ -4729,13 +4736,13 @@ Opens a new timelapse data channel and returns the name of the channel.
 + doorlock: `DA1B2C3` (string) - The doorlock to which this security alert belongs to (null means All Doorlocks).
 + trigger (motionTrigger) - Trigger describing when to send notifications.
 + inheritFromParent: `true` (boolean, default) - Inherit settings from the parent
-+ doorlockOpen: `email` (enum[array]) - Channels to send to, when door got opened.
++ doorlockOpen: `["email"]` (enum[array]) - Channels to send to, when door got opened.
   + `email`
   + `push`
-+ doorlockClosed: `email` (enum[array]) - Channels to send to, when door got closed.
++ doorlockClosed: `["email"]` (enum[array]) - Channels to send to, when door got closed.
   + `email`
   + `push`
-+ batteryStatus: `email` (enum[array]) - Channels to send to, when battery status related events occur (battery low).
++ batteryStatus: `["email"]` (enum[array]) - Channels to send to, when battery status related events occur (battery low).
   + `email`
   + `push`
 
@@ -4746,7 +4753,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + light: `CA1B2C3` (string) - The light to which this security alert belongs to.
 + trigger (motionTrigger) - Trigger describing when to send notifications.
 + inheritFromParent: `true` (boolean, default) - Inherit settings from the parent
-+ motion: `email` (enum[array]) - Channels to send to, when motion is detected.
++ motion: `["email"]` (enum[array]) - Channels to send to, when motion is detected.
   + `email`
   + `push`
 
@@ -4757,22 +4764,22 @@ Opens a new timelapse data channel and returns the name of the channel.
 + sensor: `SA1B2C3` (string) - The sensor to which this security alert belongs to.
 + trigger (motionTrigger) - Trigger describing when to send notifications.
 + inheritFromParent: `true` (boolean, default) - Inherit settings from the parent
-+ motion: `email` (enum[array]) - Channels to send to, when motion is detected.
++ motion: `["email"]` (enum[array]) - Channels to send to, when motion is detected.
   + `email`
   + `push`
-+ sensorEntryStateChange: `email` (enum[array]) - Channels to send to, when door/window got opened.
++ sensorEntryStateChange: `["email"]` (enum[array]) - Channels to send to, when door/window got opened.
   + `email`
   + `push`
-+ sensorAlarm: `email` (enum[array]) - Channels to send to, when alarm is detected.
++ sensorAlarm: `["email"]` (enum[array]) - Channels to send to, when alarm is detected.
   + `email`
   + `push`
-+ extremeValues: `email` (enum[array]) - Channels to send to, when sensor detects extreme values.
++ extremeValues: `["email"]` (enum[array]) - Channels to send to, when sensor detects extreme values.
   + `email`
   + `push`
-+ waterLeak: `email` (enum[array]) - Channels to send to, when sensor detects a water leak.
++ waterLeak: `["email"]` (enum[array]) - Channels to send to, when sensor detects a water leak.
   + `email`
   + `push`
-+ batteryStatus: `email` (enum[array]) - Channels to send to, when battery status related events occur (battery low).
++ batteryStatus: `["email"]` (enum[array]) - Channels to send to, when battery status related events occur (battery low).
   + `email`
   + `push`
 
@@ -4794,19 +4801,19 @@ Opens a new timelapse data channel and returns the name of the channel.
 + camera: `CA1B2C3` (string) - The camera to which this notification belongs to (null means All Cameras).
 + trigger (motionTrigger) - Trigger describing when to send notifications.
 + inheritFromParent: `true` (boolean, default) - Inherit settings from the parent
-+ motion: `email` (enum[array]) - Channels to send to, when camera detects motion.
++ motion: `["email"]` (enum[array]) - Channels to send to, when camera detects motion.
   + `email`
   + `push`
-+ person: `email` (enum[array]) - Channels to send to, when camera detects people.
++ person: `["email"]` (enum[array]) - Channels to send to, when camera detects people.
   + `email`
   + `push`
-+ vehicle: `email` (enum[array]) - Channels to send to, when camera detects a vehicle.
++ vehicle: `["email"]` (enum[array]) - Channels to send to, when camera detects a vehicle.
   + `email`
   + `push`
-+ package: `email` (enum[array]) - Channels to send to, when camera detects a package.
++ package: `["email"]` (enum[array]) - Channels to send to, when camera detects a package.
   + `email`
   + `push`
-+ alarmSmokeCmonx: `email` (enum[array]) - Channels to send to, when camera detects a smoke/co alarm.
++ alarmSmokeCmonx: `["email"]` (enum[array]) - Channels to send to, when camera detects a smoke/co alarm.
   + `email`
   + `push`
 
@@ -4817,7 +4824,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + doorbell: `CA1B2C3` (string) - The camera to which this security alert belongs to (null means All Cameras).
 + trigger (motionTrigger) - Trigger describing when to send notifications.
 + inheritFromParent: `true` (boolean, default) - Inherit settings from the parent
-+ ring: `push` (enum[array]) - Channels to send to, when doorbell rings.
++ ring: `["push"]` (enum[array]) - Channels to send to, when doorbell rings.
   + `push`
 
 ## `doorbellNotifications` (array[`doorbellNotification`])
@@ -4827,13 +4834,13 @@ Opens a new timelapse data channel and returns the name of the channel.
 + doorlock: `DA1B2C3` (string) - The doorlock to which this security alert belongs to (null means All Doorlocks).
 + trigger (motionTrigger) - Trigger describing when to send notifications.
 + inheritFromParent: `true` (boolean, default) - Inherit settings from the parent
-+ doorOpen: `email` (enum[array]) - Channels to send to, when door got opened.
++ doorOpen: `["email"]` (enum[array]) - Channels to send to, when door got opened.
   + `email`
   + `push`
-+ doorClosed: `email` (enum[array]) - Channels to send to, when door got closed.
++ doorClosed: `["email"]` (enum[array]) - Channels to send to, when door got closed.
   + `email`
   + `push`
-+ batteryStatus: `email` (enum[array]) - Channels to send to, when battery status related events occur (battery low).
++ batteryStatus: `["email"]` (enum[array]) - Channels to send to, when battery status related events occur (battery low).
   + `email`
   + `push`
 
@@ -4844,7 +4851,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + light: `CA1B2C3` (string) - The light to which this security alert belongs to (null means All Lights).
 + trigger (motionTrigger) - Trigger describing when to send notifications.
 + inheritFromParent: `true` (boolean, default) - Inherit settings from the parent
-+ motion: `email` (enum[array]) - Channels to send to, when motion is detected.
++ motion: `["email"]` (enum[array]) - Channels to send to, when motion is detected.
   + `email`
   + `push`
 
@@ -4882,22 +4889,22 @@ Opens a new timelapse data channel and returns the name of the channel.
 + sensor: `SA1B2C3` (string) - The sensor to which this security alert belongs to (null means All Sensors).
 + trigger (motionTrigger) - Trigger describing when to send notifications.
 + inheritFromParent: `true` (boolean, default) - Inherit settings from the parent
-+ motion: `email` (enum[array]) - Channels to send to, when motion is detected.
++ motion: `["email"]` (enum[array]) - Channels to send to, when motion is detected.
   + `email`
   + `push`
-+ doorOpen: `email` (enum[array]) - Channels to send to, when door got opened.
++ doorOpen: `["email"]` (enum[array]) - Channels to send to, when door got opened.
   + `email`
   + `push`
-+ alarm: `email` (enum[array]) - Channels to send to, when alarm is detected.
++ alarm: `["email"]` (enum[array]) - Channels to send to, when alarm is detected.
   + `email`
   + `push`
-+ extremeValues: `email` (enum[array]) - Channels to send to, when sensor detects extreme values.
++ extremeValues: `["email"]` (enum[array]) - Channels to send to, when sensor detects extreme values.
   + `email`
   + `push`
-+ waterLeak: `email` (enum[array]) - Channels to send to, when sensor detects a water leak.
++ waterLeak: `["email"]` (enum[array]) - Channels to send to, when sensor detects a water leak.
   + `email`
   + `push`
-+ batteryStatus: `email` (enum[array]) - Channels to send to, when battery status related events occur (battery low).
++ batteryStatus: `["email"]` (enum[array]) - Channels to send to, when battery status related events occur (battery low).
   + `email`
   + `push`
 
@@ -4905,25 +4912,25 @@ Opens a new timelapse data channel and returns the name of the channel.
 
 ## systemNotifications (object)
 
-+ deviceDiscovery: `email` (enum[array]) - Device discovery notification channels.
++ deviceDiscovery: `["email"]` (enum[array]) - Device discovery notification channels.
   + `email`
   + `push`
-+ cameraConnectionStatus: `email` (enum[array]) - Device connection status notification channels.
++ cameraConnectionStatus: `["email"]` (enum[array]) - Device connection status notification channels.
   + `email`
   + `push`
-+ geofence: `email` (enum[array]) - Geofence notification channels.
++ geofence: `["email"]` (enum[array]) - Geofence notification channels.
   + `email`
   + `push`
-+ footageManipulation: `email` (enum[array]) - Footage manipulation notification channels.
++ footageManipulation: `["email"]` (enum[array]) - Footage manipulation notification channels.
   + `email`
   + `push`
-+ recordingScheduleEdit: `email` (enum[array]) - Recording schedule edit notification channels.
++ recordingScheduleEdit: `["email"]` (enum[array]) - Recording schedule edit notification channels.
   + `email`
   + `push`
-+ hddIssues: `email` (enum[array]) - Hard drive issues notification channels.
++ hddIssues: `["email"]` (enum[array]) - Hard drive issues notification channels.
   + `email`
   + `push`
-+ deviceEvents: `email` (enum[array]) - Other unclassified events notification channels.
++ deviceEvents: `["email"]` (enum[array]) - Other unclassified events notification channels.
   + `email`
   + `push`
 
@@ -4937,7 +4944,7 @@ Opens a new timelapse data channel and returns the name of the channel.
 + status: `pending` (string, default) - Upload status.
 + destination (string) - Video archive destination.
 + externalFileId: `null` (string, default) - External file ID.
-+ metadata: `null` (object, default) - File data used for export.
++ metadata (object) - File data used for export.
 + fileSize: `0` (number, default) - File size in MB.
 + failReason: `null` (string, default) - Reason for upload failure.
 
@@ -4951,15 +4958,15 @@ Opens a new timelapse data channel and returns the name of the channel.
 + connectionHost: `null` (string, default) - The ip or hostname the device uses to connect.
 + type: `null` (string, default) - The device model name.
 + name: `null` (string, default) - The name of the device.
-+ upSince (number) - Unix timestamp of when the device started up.
-+ uptime (number) - device uptime in second.
-+ lastSeen (number) - Unix timestamp of when the device was last connected.
-+ connectedSince (number) - Unix timestamp of when the device connected to the NVR.
++ upSince: `1445408038748` (number) - Unix timestamp of when the device started up.
++ uptime: `1234567890` (number) - device uptime in second.
++ lastSeen: `1445408038748` (number) - Unix timestamp of when the device was last connected.
++ connectedSince: `1445408038748` (number) - Unix timestamp of when the device connected to the NVR.
 + state: `DISCONNECTED` (enum[string], default) - Connection state of the device.
   + `CONNECTED`
   + `CONNECTING`
   + `DISCONNECTED`
-+ lastDisconnect (number) - Unix timestamp of the last time the device disconnected.
++ lastDisconnect: `1445408038748` (number) - Unix timestamp of the last time the device disconnected.
 + hardwareRevision: `null` (string, default) - Hardware revision of the device
 + firmwareVersion: `null` (string, default) - The version of firmware that is installed on the device.
 + latestFirmwareVersion: `null` (string, default) - The latest firmware version of the device.
